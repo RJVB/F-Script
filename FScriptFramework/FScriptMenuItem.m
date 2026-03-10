@@ -44,7 +44,7 @@
   {
     NSMenu *submenu = [[[NSMenu alloc] initWithTitle:@"F-Script"] autorelease];
     
-	NSMenuItem *item1 = [[[NSMenuItem alloc] initWithTitle:@"Show Console" action:@selector(showConsole:) keyEquivalent:@""] autorelease];
+	NSMenuItem *item1 = [[[NSMenuItem alloc] initWithTitle:@"Show Console" action:@selector(showMenuConsole:) keyEquivalent:@""] autorelease];
     [item1 setTarget:self];
     [submenu addItem:item1];
     
@@ -65,7 +65,9 @@
  
 - (FSInterpreterView *) interpreterView
 {
-  if (!interpreterView) [NSBundle loadNibNamed:@"FSConsole.nib" owner:self];
+  if (!interpreterView) {
+    [NSBundle loadNibNamed:@"FSConsole.nib" owner:self];
+  }
   return interpreterView;
 }
 
@@ -74,7 +76,7 @@
   [[[self interpreterView] interpreter] browse]; 
 } 
 
-- (IBAction)showConsole:(id)sender
+- (IBAction)showMenuConsole:(id)sender
 {
   [[[self interpreterView] window] makeKeyAndOrderFront:nil];
 }

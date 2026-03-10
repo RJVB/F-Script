@@ -43,8 +43,7 @@ store is removed.
 - (id)initWithUIntSize:(NSUInteger)size;  // designated initializer. The capacity of the receiver is
                                         // set to the value of the argument. The receiver is filled
                                         // with empty strings.
-- (NSInteger)size;
 -(void)save;
-+(FSCommandHistory*)latestHistoryWithSize:(NSUInteger)size;
++(FSCommandHistory*)newLatestHistoryWithSize:(NSUInteger)size;
 
 @end

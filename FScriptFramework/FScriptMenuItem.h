@@ -15,7 +15,7 @@
 
 - (FSInterpreterView *)interpreterView;
 - (IBAction)openObjectBrowser:(id)sender;
-- (IBAction)showConsole:(id)sender;
+- (IBAction)showMenuConsole:(id)sender;
 - (IBAction)showPreferencePanel:(id)sender;
 - (IBAction)updatePreference:(id)sender; 
 

@@ -144,6 +144,15 @@ static NSMutableCharacterSet *letterDigitUnderscoreCharacterSet;
   }
 } 
 
+- (id)initWithFrame:(NSRect)frameRect textContainer:(NSTextContainer *)container
+{
+  if ((self = [super initWithFrame:frameRect textContainer:container])) {
+    [self setAutomaticDashSubstitutionEnabled:NO];
+    [self setAutomaticQuoteSubstitutionEnabled:NO];
+  }
+  return self;
+}
+
 - (NSArray *)completionsForPartialWordRange:(NSRange)charRange indexOfSelectedItem:(NSInteger *)index
 {
   NSString *stringToComplete;
@@ -170,6 +179,22 @@ static NSMutableCharacterSet *letterDigitUnderscoreCharacterSet;
     return [[self delegate] textView:self completions:result forPartialWordRange:charRange indexOfSelectedItem:index];
   else
     return result;  
+}
+
+- (void)deleteToBeginningOfLine:(id)sender {
+  NSRange selectedRange = [self selectedRange];
+  NSRange lineRange = [[self string] lineRangeForRange:selectedRange];
+  
+  // Calculate the range to delete
+  NSUInteger start = lineRange.location + 2; // 5th character after line beginning
+  NSUInteger end = selectedRange.location;
+  NSRange rangeToDelete = NSMakeRange(start, end - start);
+  
+  if (rangeToDelete.location + rangeToDelete.length <= [self string].length) {
+    [self.textStorage deleteCharactersInRange:rangeToDelete];
+    NSUInteger newCursorPosition = start;
+    self.selectedRange = NSMakeRange(newCursorPosition, 0);
+  }
 }
 
 - (void)insertCompletion:(NSString *)word forPartialWordRange:(NSRange)charRange movement:(NSInteger)movement isFinal:(BOOL)flag

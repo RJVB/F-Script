@@ -9,21 +9,11 @@
 
 + (NSImage *)branchImage {return nil; /* No branch image */ } 
 
-- (id) autorelease 
-{
-  //NSLog(@"autorelease called");
-  return [super autorelease];
-}
 
 - (enum FSObjectBrowserCellType)objectBrowserCellType { return objectBrowserCellType; }
 
-- (NSString *)classLabel { return classLabel; }
-
--(void) dealloc
-{
-  [label release];               
-  [classLabel release];          
-  [super dealloc];
+- (NSString *) classLabel {
+  return [classLabel copy];
 }
 
 - (id)init
@@ -36,13 +26,10 @@
   return nil;    
 }
 
-- (NSString *)label { return label; }
-
-- (oneway void) release
-{
-  //NSLog(@"release called");
-  [super release];
+- (NSString *)label {
+  return label;
 }
+
 
 - (id)representedObject
 {
@@ -70,28 +57,18 @@
   else return [super representedObject];
 }
 
-- (void) setObjectBrowserCellType:(enum FSObjectBrowserCellType)theObjectBrowserCellType { objectBrowserCellType =  theObjectBrowserCellType;}
+- (void) setObjectBrowserCellType:(enum FSObjectBrowserCellType)theObjectBrowserCellType {
+  objectBrowserCellType =  theObjectBrowserCellType;
+}
 
 - (void) setClassLabel:(NSString *)theClassLabel
-{ 
-  [theClassLabel retain];
-  [classLabel release];
+{
   classLabel = theClassLabel;
 }
 
 - (void) setLabel:(NSString *)theLabel
-{ 
-  [theLabel retain];
-  [label release];
+{
   label = theLabel;
 }
-
-/*- (BOOL)startTrackingAt:(NSPoint)startPoint inView:(NSView *)controlView
-{
-
-  NSLog(@"startTrackingAt:");
-
-  return NO;
-}*/
 
 @end

@@ -93,8 +93,6 @@ labelFromPropertyName(NSString* propertyName)
         [m sizeToCells];
         //[m scrollCellToVisibleAtRow:[matrix selectedRow] column:0];
         [m setNeedsDisplay];
-
-        [objectHelper release];
 }
 
 @end
@@ -120,21 +118,17 @@ labelFromPropertyName(NSString* propertyName)
         self = [super init];
         if (self) {
 
-                view = [[theView retain] autorelease];
+                view = theView;
         }
 
         return self;
 }
 
-- (void)dealloc
-{
-        [_rootViewModelItem release];
-        [super dealloc];
-}
+
 - (void)addClassLabel:(NSString*)cLabel toMatrix:(NSMatrix*)matrix
 {
         [view addClassLabel:cLabel toMatrix:matrix];
-        FSObjectInspectorViewModelItem* item = [[FSObjectInspectorViewModelItem new] autorelease];
+        FSObjectInspectorViewModelItem* item = [FSObjectInspectorViewModelItem new];
         item.valueType = FS_ITEM_HEADER;
         item.name = cLabel;
         [self.rootViewModelItem.mutableChildNodes addObject:item];
@@ -150,7 +144,7 @@ labelFromPropertyName(NSString* propertyName)
                         }
                 }
                 if (self.rootViewModelItem && valueType != FS_ITEM_OBJECT || valueClass) {
-                        FSObjectInspectorViewModelItem* item = [[FSObjectInspectorViewModelItem new] autorelease];
+                        FSObjectInspectorViewModelItem* item = [FSObjectInspectorViewModelItem new];
                         item.name = label;
                         item.valueType = valueType;
                         item.value = object;
@@ -182,7 +176,7 @@ labelFromPropertyName(NSString* propertyName)
 
 - (void)addGroup:(NSString*)groupName
 {
-        FSObjectInspectorViewModelItem* item = [[FSObjectInspectorViewModelItem new] autorelease];
+        FSObjectInspectorViewModelItem* item = [FSObjectInspectorViewModelItem new];
         item.name = groupName;
         item.valueType = FS_ITEM_GROUP;
         [self.currentViewModelItem.mutableChildNodes addObject:item];
@@ -357,7 +351,7 @@ labelFromPropertyName(NSString* propertyName)
                         ADD_OBJECT_RO(nil, LABEL)                                                                                                                                                                                                                                                 \
                 }                                                                                                                                                                                                                                                                                 \
                 else {                                                                                                                                                                                                                                                                            \
-                        [view addObject:[[[FSGenericPointer alloc] initWithCPointer:(POINTER)freeWhenDone:NO type:@encode(void)] autorelease] withLabel:(LABEL)toMatrix:m classLabel:classLabel selectedClassLabel:selectedClassLabel selectedLabel:selectedLabel selectedObject:selectedObject]; \
+                        [view addObject:[[FSGenericPointer alloc] initWithCPointer:(POINTER)freeWhenDone:NO type:@encode(void)] withLabel:(LABEL)toMatrix:m classLabel:classLabel selectedClassLabel:selectedClassLabel selectedLabel:selectedLabel selectedObject:selectedObject]; \
                 }                                                                                                                                                                                                                                                                                 \
         }                                                                                                                                                                                                                                                                                         \
         @catch (id exception) { NSLog(@"%@", exception); }
@@ -383,21 +377,23 @@ labelFromPropertyName(NSString* propertyName)
 #define ADD_NUMBER2(NUMBER, PROPERTY, LABEL) \
         ADD_VALUE([FSNumber numberWithDouble:(NUMBER)], FS_ITEM_NUMBER, PROPERTY, nil, 0, nil, LABEL, NO);
 
+
+- (void) setClassLabel: (NSString*) classLabel {
+        self->classLabel = classLabel;
+}
+
 - (void)fillMatrix:(NSMatrix*)theMatrix withObject:(id)object
 {
-        [object retain]; // (1) To be sure object will not be deallocated as a side effect of the removing of rows
-
         m = theMatrix;
-        selectedCell = [[[m selectedCell] retain] autorelease]; // retain and autorelease in order to avoid premature deallocation as a side effect of the removing of rows
-        selectedClassLabel = [[[selectedCell classLabel] copy] autorelease]; // copy and autorelease in order to avoid premature invalidation as a side effect of the removing of rows
-        selectedLabel = [[[selectedCell label] copy] autorelease]; // copy and autorelease in order to avoid premature invalidation as a side effect of the removing of rows
+        selectedCell = [m selectedCell];
+        selectedClassLabel = [[selectedCell classLabel] copy];
+        selectedLabel = [[selectedCell label] copy];
         selectedObject = [selectedCell representedObject];
-        classLabel = @"";
+        [self setClassLabel: @""];
 
         [m renewRows:0 columns:1];
 
         [view addObject:object toMatrix:m label:@"" classLabel:@"" indentationLevel:0 leaf:YES];
-        [object release]; // It's now safe to match the retain in instruction (1)
 
         if (selectedObject == object && [selectedClassLabel isEqualToString:@""] && [selectedLabel isEqualToString:@""])
                 [m selectCellAtRow:[m numberOfRows] - 1 column:0];
@@ -445,7 +441,7 @@ labelFromPropertyName(NSString* propertyName)
         }
         else if ([object isKindOfClass:[NSManagedObject class]]) {
                 NSManagedObject* o = object;
-                classLabel = @"NSManagedObject Properties";
+                [self setClassLabel: @"NSManagedObject Properties"];
                 NSArray* attributeKeys = [[[[o entity] attributesByName] allKeys] sortedArrayUsingSelector:@selector(compare:)];
                 [view addPropertyLabel:@"Attributes" toMatrix:m];
                 for (NSUInteger i = 0, count = [attributeKeys count]; i < count; i++) {
@@ -614,7 +610,7 @@ labelFromPropertyName(NSString* propertyName)
                                         break;
 
                         if (i < count && count > 0) {
-                                classLabel = @"Bindings";
+                                [self setClassLabel: @"Bindings"];
                                 [view addClassLabel:classLabel toMatrix:m color:[NSColor colorWithCalibratedRed:0 green:0.7098 blue:1 alpha:1]];
 
                                 for (i = 0, count = [exposedBindings count]; i < count; i++) {
@@ -626,6 +622,7 @@ labelFromPropertyName(NSString* propertyName)
                 }
         }
         [self populateModelWithObject:object];
+
 }
 
 -(void)_resetRootNodeWithObject:(id)object
@@ -682,7 +679,7 @@ labelFromPropertyName(NSString* propertyName)
                 objc_property_t* properties = class_copyPropertyList(cls, &count);
                 if (properties != NULL && !(cls == [NSView class])) // Second part of condition is a quick fix to avoid bloating display for the NSView class with a "one property" section (10.5.0) or spurious properties (10.6). TODO: revise this.
                 {
-                        classLabel = [NSString stringWithFormat:@"%@ Properties", [cls printString]];
+                        [self setClassLabel: [NSString stringWithFormat:@"%@ Properties", [cls printString]]];
                         [view addClassLabel:classLabel toMatrix:m color:[NSColor magentaColor]];
                         
                         for (i = 0; i < count; i++) {
@@ -886,7 +883,6 @@ labelFromPropertyName(NSString* propertyName)
                         //ADD_OBJECT(          [o attributeRuns]                      ,@"Attribute runs")
                         ADD_NUMBER(o, changeInLength)
                         ADD_OBJECT(o, delegate, NSObject.class, YES)
-                        ADD_OPTIONS(o, editedMask, TextStorageEditedOptions)
                         ADD_RANGE(o, editedRange)
                         ADD_BOOL(o, fixesAttributesLazily)
                         ADD_OBJECT(o, font)
@@ -959,15 +955,12 @@ labelFromPropertyName(NSString* propertyName)
                         ADD_COLOR(o, backgroundColor)
                         ADD_ENUM(o, bezelStyle, BezelStyle)
                         ADD_ENUM(o, gradientType, GradientType)
-                        ADD_OPTIONS(o, highlightsBy, CellStyleMask)
                         ADD_BOOL(o, imageDimsWhenDisabled)
                         ADD_ENUM(o, imagePosition, CellImagePosition)
                         ADD_ENUM(o, imageScaling, ImageScaling)
                         ADD_BOOL(o, isTransparent)
                         ADD_OBJECT_NOT_NIL(o, keyEquivalentFont)
-                        ADD_OPTIONS( o, keyEquivalentModifierMask, EventModifierFlags)
                         ADD_BOOL(o, showsBorderOnlyWhileMouseInside)
-                        ADD_OPTIONS(o, showsStateBy, CellStyleMask)
                         ADD_OBJECT_NOT_NIL(o, sound)
                         ADD_STRING(o, title)
                 }
@@ -1392,7 +1385,6 @@ labelFromPropertyName(NSString* propertyName)
                 ADD_NUMBER(o, absoluteX)
                 ADD_NUMBER(o, absoluteY)
                 ADD_NUMBER(o, absoluteZ)
-                ADD_OPTIONS(o, buttonMask, EventButtonMask)
         }
         if (type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp)
                 ADD_NUMBER(o, buttonNumber)
@@ -1426,9 +1418,6 @@ labelFromPropertyName(NSString* propertyName)
                 ADD_BOOL(o, isEnteringProximity)
         if (type == NSKeyDown || type == NSKeyUp)
                 ADD_NUMBER(o, keyCode)
-        if (type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp || type == NSMouseMoved || type == NSLeftMouseDragged || type == NSRightMouseDragged || type == NSOtherMouseDragged || type == NSScrollWheel)
-                ADD_POINT(o, locationInWindow)
-        ADD_OPTIONS(o, modifierFlags, EventModifierFlags)
         if (type == NSTabletProximity || ((type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp || type == NSMouseMoved || type == NSLeftMouseDragged || type == NSRightMouseDragged || type == NSOtherMouseDragged || type == NSScrollWheel) && [object subtype] == NSTabletProximityEventSubtype)) {
                 ADD_NUMBER(o, pointingDeviceID)
                 ADD_NUMBER(o, pointingDeviceSerialNumber)
@@ -1438,8 +1427,6 @@ labelFromPropertyName(NSString* propertyName)
                 ADD_NUMBER(o, pressure)
         if (type == NSTabletPoint || ((type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp || type == NSMouseMoved || type == NSLeftMouseDragged || type == NSRightMouseDragged || type == NSOtherMouseDragged || type == NSScrollWheel) && [object subtype] == NSTabletPointEventSubtype))
                 ADD_NUMBER(o, rotation)
-        if (type == NSAppKitDefined || type == NSSystemDefined || type == NSApplicationDefined || type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp || type == NSMouseMoved || type == NSLeftMouseDragged || type == NSRightMouseDragged || type == NSOtherMouseDragged || type == NSScrollWheel)
-                ADD_ENUM(o, subtype, EventSubtype)
         if (type == NSTabletProximity || ((type == NSLeftMouseDown || type == NSLeftMouseUp || type == NSRightMouseDown || type == NSRightMouseUp || type == NSOtherMouseDown || type == NSOtherMouseUp || type == NSMouseMoved || type == NSLeftMouseDragged || type == NSRightMouseDragged || type == NSOtherMouseDragged || type == NSScrollWheel) && [object subtype] == NSTabletProximityEventSubtype)) {
                 ADD_NUMBER(o, systemTabletID)
                 ADD_NUMBER(o, tabletID)
@@ -1852,7 +1839,6 @@ labelFromPropertyName(NSString* propertyName)
         ADD_BOOL(o, isHighlighted)
         ADD_BOOL(o, isSeparatorItem)
         ADD_OBJECT(o, keyEquivalent)
-        ADD_OPTIONS(o, keyEquivalentModifierMask, EventModifierFlags)
         ADD_OBJECT(o, menu)
         ADD_OBJECT_NOT_NIL(o, mixedStateImage)
         ADD_OBJECT_NOT_NIL(o, offStateImage)
@@ -2196,7 +2182,6 @@ labelFromPropertyName(NSString* propertyName)
         ADD_BOOL(o, isHidden)
         ADD_NUMBER(o, maxWidth)
         ADD_NUMBER(o, minWidth)
-        ADD_OPTIONS(o, resizingMask, TableColumnResizingOptions)
         ADD_OBJECT_NOT_NIL(o, sortDescriptorPrototype)
         ADD_OBJECT(o, tableView)
         ADD_NUMBER(o, width)
@@ -2255,7 +2240,6 @@ labelFromPropertyName(NSString* propertyName)
 {
         NSTextList* o = object;
         ADD_CLASS_LABEL(@"NSTextList Info");
-        ADD_OPTIONS(o, listOptions, TextListOptions)
         ADD_OBJECT(o, markerFormat)
 }
 
@@ -2646,10 +2630,6 @@ labelFromPropertyName(NSString* propertyName)
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
         ADD_BOOL(o, acceptsTouchEvents)
 #endif
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-        ADD_BOOL(o, allowsVibrancy)
-#endif
-        ADD_OPTIONS(o, autoresizingMask, AutoresizingMaskOptions)
         ADD_BOOL(o, autoresizesSubviews)
         ADD_RECT(o, bounds)
         ADD_NUMBER(o, boundsRotation)
@@ -2837,7 +2817,6 @@ labelFromPropertyName(NSString* propertyName)
                         ADD_BOOL(o, isBordered)
                         ADD_BOOL(o, isTransparent)
                         ADD_OBJECT(o, keyEquivalent)
-                        ADD_OPTIONS(o, keyEquivalentModifierMask, EventModifierFlags)
                         ADD_BOOL(o, showsBorderOnlyWhileMouseInside)
                         ADD_OBJECT_NOT_NIL(o, sound)
                         ADD_ENUM(o, state, CellStateValue)
@@ -3206,7 +3185,6 @@ labelFromPropertyName(NSString* propertyName)
                 ADD_ENUM(o, alignment, TextAlignment)
                 ADD_ENUM(o, baseWritingDirection, WritingDirection)
                 ADD_OBJECT(o, cell)
-                ADD_ENUM(o, controlSize, ControlSize)
                 ADD_OBJECT_NOT_NIL(o, currentEditor)
                 ADD_OBJECT(o, font)
                 ADD_OBJECT(o, formatter)

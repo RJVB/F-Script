@@ -135,14 +135,6 @@ ENUMTOOBJ(AlertStyle,
           NSCriticalAlertStyle);
 
 
-OPTSTOOBJ(AutoresizingMaskOptions,
-          NSViewMinXMargin,
-          NSViewWidthSizable,
-          NSViewMaxXMargin,
-          NSViewMinYMargin,
-          NSViewHeightSizable,
-          NSViewMaxYMargin);
-
 ENUMTOOBJ(AttributeType,
           NSUndefinedAttributeType,
           NSInteger16AttributeType,
@@ -204,12 +196,6 @@ ENUMTOOBJ(BoxType,
           NSBoxCustom);
 
 
-OPTSTOOBJ(EventButtonMask,
-          NSPenTipMask,
-          NSPenLowerSideMask,
-          NSPenUpperSideMask);
-
-
 ENUMTOOBJ(BrowserColumnResizingType,
           NSBrowserNoColumnResizing,
           NSBrowserAutoColumnResizing,
@@ -225,13 +211,6 @@ ENUMTOOBJ(CellImagePosition,
           NSImageAbove,
           NSImageOverlaps);
 
-
-OPTSTOOBJ(CellStyleMask,
-          NSNoCellMask,
-          NSContentsCellMask,
-          NSPushInCellMask,
-          NSChangeGrayCellMask,
-          NSChangeBackgroundCellMask);
 
 ENUMTOOBJ(CellStateValue,
           NSMixedState,
@@ -377,11 +356,6 @@ ENUMTOOBJ(EventType,
           NSTabletProximity);
 
 
-ENUMTOOBJ(EventSubtype,
-          NSMouseEventSubtype,
-          NSTabletPointEventSubtype,
-          NSTabletProximityEventSubtype);
-
 
 ENUMTOOBJ(ExpressionType,
           NSConstantValueExpressionType,
@@ -468,16 +442,6 @@ ENUMTOOBJ(ImageScaling,
           NSImageScaleNone,
           NSImageScaleProportionallyUpOrDown);
 
-
-OPTSTOOBJ(EventModifierFlags,
-          NSAlphaShiftKeyMask,
-          NSShiftKeyMask,
-          NSControlKeyMask,
-          NSAlternateKeyMask,
-          NSCommandKeyMask,
-          NSNumericPadKeyMask,
-          NSHelpKeyMask,
-          NSFunctionKeyMask);
 
 OPTSTOOBJ(GlyphStorageLayoutOptions,
           NSShowControlGlyphs,
@@ -661,11 +625,6 @@ ENUMTOOBJ(StringEncoding,
           NSMacOSRomanStringEncoding);
 
 
-OPTSTOOBJ(TableColumnResizingOptions,
-          NSTableColumnNoResizing,
-          NSTableColumnAutoresizingMask,
-          NSTableColumnUserResizingMask);
-
 ENUMTOOBJ(TableViewColumnAutoresizingStyle,
           NSTableViewNoColumnAutoresizing,
           NSTableViewUniformColumnAutoresizingStyle,
@@ -715,13 +674,6 @@ ENUMTOOBJ(TextFieldBezelStyle,
           NSTextFieldSquareBezel,
           NSTextFieldRoundedBezel);
 
-OPTSTOOBJ(TextListOptions,
-          NSTextListPrependEnclosingMarker);
-
-
-OPTSTOOBJ(TextStorageEditedOptions,
-          NSTextStorageEditedAttributes,
-          NSTextStorageEditedCharacters);
 
 ENUMTOOBJ(TextTableLayoutAlgorithm,
           NSTextTableAutomaticLayoutAlgorithm,
@@ -835,8 +787,7 @@ OPTSTOOBJ(WindowMask,
           NSResizableWindowMask,
           NSTexturedBackgroundWindowMask,
           NSUnifiedTitleAndToolbarWindowMask,
-          NSFullScreenWindowMask,
-          NSFullSizeContentViewWindowMask);
+          NSFullScreenWindowMask);
 
 ENUMTOOBJ(WindowBackingLocation,
           NSWindowBackingLocationDefault,

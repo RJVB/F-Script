@@ -44,7 +44,7 @@
 
 - (NSString *)printString
 {
-  NSMutableString *result = [NSMutableString stringWithString:@"#{ "];
+  NSMutableString *result = [NSMutableString stringWithString:@"@{ "];
   BOOL firstEntry = YES;
 
   for (id key in self)
@@ -53,7 +53,7 @@
     else            [result appendString:@",\n   "];
       
     [result appendString:printString(key)];
-    [result appendString:@" -> "];
+    [result appendString:@" : "];
     [result appendString:printString([self objectForKey:key])];
   }
   

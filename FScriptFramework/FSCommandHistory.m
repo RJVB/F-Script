@@ -135,7 +135,7 @@
       NSBundle *appBundle = [NSBundle mainBundle];
       NSString *appName = [ appBundle.infoDictionary objectForKey:@"CFBundleExecutable" ];
       NSString *applicationSupportDir = [paths[0] stringByAppendingPathComponent:appName];
-      NSFileManager *fileManager = [NSFileManager new];
+      NSFileManager *fileManager = [[NSFileManager new] autorelease];
       if (![fileManager fileExistsAtPath:applicationSupportDir]) {
         NSError *error   = nil ;
         BOOL success = [ fileManager
@@ -147,7 +147,6 @@
           if ( errorOut ) {
             *errorOut = error ;
           }
-          [fileManager release];
           return nil ;
         }
       }
@@ -169,7 +168,7 @@
   }
 }
 
-+(FSCommandHistory*)latestHistoryWithSize:(NSUInteger)maxSize
++(FSCommandHistory*)newLatestHistoryWithSize:(NSUInteger)maxSize
 {
   NSString *historyPath = [FSCommandHistory _historyPath:nil];
   FSCommandHistory *history = nil;

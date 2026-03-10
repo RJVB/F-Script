@@ -95,8 +95,15 @@ static struct codeNodePatternElementPair makeCodeNodePatternElementPair(FSCNBase
   return r;
 }
 
-static NSMutableString *operator_name(NSString *op_elements) //ex: "++" -> "_plus_plus"
-{  
+static NSMutableString *operator_name(struct res_scan rs) //ex: "++" -> "_plus_plus"
+{
+  if (rs.type == COLON) {
+    NSMutableString *str = [NSMutableString stringWithCapacity: 16];
+    [str appendString: @"_hyphen_greater"];
+    return str;
+  }
+  
+  NSString *op_elements = rs.value;
   char i,nb;
   NSMutableString *r = [NSMutableString stringWithCapacity:[op_elements length]*7];
   const char *op_elements_cstr = [op_elements UTF8String];
@@ -272,8 +279,8 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
     return sel_getUid(cstr);
   else if ( strcmp(cstr,"<null selector>") == 0)
     return (SEL)0;
-  else
-    return sel_getUid([[NSString stringWithFormat:@"operator%@:",operator_name(selectorStr)] UTF8String]);
+  else // note that we cast to nsmutablestring which is fine since operator_name does not actually modify the value.
+    return sel_getUid([[NSString stringWithFormat:@"operator%@:", operator_name((struct res_scan){.value=(NSMutableString*)selectorStr, .type=OPERATOR})] UTF8String]);
 }
 
 - (id)init
@@ -318,21 +325,154 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   {
     if (isspace(string[string_index]))    
       string_index++;
-    else if (string[string_index]=='\"')
+    else if (string[string_index]=='\'')
     {
       string_index++;
-      while (string[string_index] != '\"' && string_index != string_size)
+      while (string[string_index] != '\'' && string_index != string_size)
         string_index++;
-      if (string[string_index] == '\"')
+      if (string[string_index] == '\'')
         string_index++;
     }
     else break;
   }      
-}    
+}
+
+- (void) scanString {
+  string_index++;
+  int j = string_index;
+  while(string_index < string_size)
+  {
+    if (string[string_index] == '\\')
+      string_index += 2;
+    else if (string[string_index] == '"')
+      if (string[string_index+1] == '"') string_index += 2;
+      else                                break;
+      else
+        string_index++;
+  }
+  if (string_index < string_size)
+  {
+    rs.type = SSTRING;
+    char *buf =  malloc(string_index-j+1);
+    
+    int k = 0;
+    while(j < string_index)
+    {
+      if (string[j] == '\\')
+      {
+        j++;
+        switch (string[j])
+        {
+          case 'a' : buf[k] = '\a'; break;
+          case 'b' : buf[k] = '\b'; break;
+          case 'f' : buf[k] = '\f'; break;
+          case 'n' : buf[k] = '\n'; break;
+          case 'r' : buf[k] = '\r'; break;
+          case 't' : buf[k] = '\t'; break;
+          case 'v' : buf[k] = '\v'; break;
+          case '\\': buf[k] = '\\'; break;
+          case '"': buf[k] = '"'; break;
+          default  : buf[k] = '\\'; k++; buf[k] = string[j]; break;
+        }
+      }
+      else if (string[j] == '"')
+      {
+        NSAssert(string[j+1] == '"', @"");
+        buf[k] = string[j];
+        j++;
+      }
+      else
+        buf[k] = string[j];
+      
+      j++; k++;
+    }
+    buf[k] = '\0';
+    
+    
+    
+    rs.value = [NSMutableString stringWithUTF8String:buf];
+    free(buf);
+    
+    string_index++;
+    return;
+  }
+  else
+  {
+    [self syntaxError:@"end of string (\') missing"];
+  }
+}
+
+- (void) scanDigit {
+  NSInteger exponentLetterIndex = -1;
+  NSInteger hexadecimalRadixSpecifierIndex = -1;
+  int firstDigitIndex = string_index;
+  string_index++;
+  while( string_index < string_size && (isdigit(string[string_index])) )
+    string_index++;
+  
+  if (string_index < string_size)
+  {
+    if (string[string_index] == 'r')
+    {
+      if (string_index == firstDigitIndex+2 && string[firstDigitIndex] == '1' && string[firstDigitIndex+1] == '6')
+      {
+        hexadecimalRadixSpecifierIndex = firstDigitIndex;
+        string_index++;
+        
+        if (string_index == string_size || !isHexadecimalDigit(string[string_index]))
+          [self syntaxError:@"invalid number literal"];
+        
+        while( string_index < string_size && (isHexadecimalDigit(string[string_index])) )
+          string_index++;
+      }
+    }
+    else
+    {
+      if (string[string_index] == '.' && isdigit(string[string_index+1]))
+      {
+        string_index++;
+        while( string_index < string_size && (isdigit(string[string_index])) )
+          string_index++;
+      }
+      
+      if (string_index < string_size && (string[string_index] == 'e'|| string[string_index] == 'd' || string[string_index] == 'q'))
+      {
+        exponentLetterIndex = string_index;
+        string_index++;
+        if (string_index == string_size || (!isdigit(string[string_index]) && string[string_index] != '+' && string[string_index] != '-'))
+          [self syntaxError:@"invalid number literal"];
+        if (string[string_index] == '+' || string[string_index] == '-')
+          string_index++;
+        if (string_index == string_size || !isdigit(string[string_index]))
+          [self syntaxError:@"invalid number literal"];
+        while( string_index < string_size && (isdigit(string[string_index])) )
+          string_index++;
+      }
+    }
+  }
+  
+  rs.type = SNUMBER;
+  char *buf = malloc(string_index-firstDigitIndex+1);
+  memcpy(buf, &(string[firstDigitIndex]), string_index-firstDigitIndex);
+  buf[string_index-firstDigitIndex] = '\0';
+  
+  // Translate into a format understood by the strtod() C function used latter to get a double from the string representation of the number
+  if (hexadecimalRadixSpecifierIndex != -1)
+  {
+    buf[hexadecimalRadixSpecifierIndex - firstDigitIndex] = '0';
+    buf[1 + hexadecimalRadixSpecifierIndex - firstDigitIndex] = 'x';
+    buf[2 + hexadecimalRadixSpecifierIndex - firstDigitIndex] = '0';
+  }
+  
+  if (exponentLetterIndex != -1) buf[exponentLetterIndex - firstDigitIndex] = 'e';
+  
+  rs.value = [NSMutableString stringWithUTF8String:buf];
+  free(buf);
+}
 
 - (void)scan
-{  
-  NSInteger j, k, firstDigitIndex;
+{
+  NSInteger j, k;
   char * buf;
   
   [self goToNextToken];
@@ -396,7 +536,27 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   case '}' :rs.type = CLOSE_BRACE      ; string_index++; return;
   case ',' :rs.type = COMMA            ; string_index++; return;
   case ';' :rs.type = SEMICOLON        ; string_index++; return;
-  case '@' :rs.type = AT               ; string_index++; return;
+  case '@' : {
+    if (string[string_index + 1] == '{')
+    {
+      rs.type = DICTIONARY_BEGIN;
+      string_index += 2;
+      return;
+    } else if (string[string_index + 1] == '[') {
+      rs.type = ARRAY_BEGIN;
+      string_index += 2;
+      return;
+    } else if (string[string_index + 1] == '"') {
+      string_index += 1;
+      [self scanString];
+      return;
+    } else if (isdigit(string[string_index + 1])) {
+      string_index += 1;
+      [self scanDigit];
+      return;
+    }
+    rs.type = AT               ; string_index++; return;
+  }
   case '.' :rs.type = PERIOD           ; string_index++; return;
   case '^' :rs.type = CARET            ; string_index++; return;
   case '#' :
@@ -438,79 +598,23 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
       return;
     }           
   }
-  case ':' :
-    if (string[string_index+1] == '=')
-    {
+  case '=' :
       rs.type = SASSIGNMENT ;
-      string_index += 2; return; 
-    }
-    else         
-    {
-      rs.type = COLON;
-      string_index ++  ; return; 
-    }
-  case '\'': 
-    string_index++;
-    j = string_index;
-    while(string_index < string_size)
-    {
-      if (string[string_index] == '\\')
-        string_index += 2;
-      else if (string[string_index] == '\'')
-       if (string[string_index+1] == '\'') string_index += 2;
-       else                                break;
-      else
-        string_index++;    
-    }  
-    if (string_index < string_size)
-    {
-      rs.type = SSTRING;
-      buf =  malloc(string_index-j+1);
-      
-      k = 0;
-      while(j < string_index)
+      string_index += 1; return;
+  case ':':
+      if (string[string_index+1] == '=')
       {
-        if (string[j] == '\\')
-        {
-          j++;
-          switch (string[j])
-          {
-          case 'a' : buf[k] = '\a'; break;
-          case 'b' : buf[k] = '\b'; break;
-          case 'f' : buf[k] = '\f'; break;
-          case 'n' : buf[k] = '\n'; break;
-          case 'r' : buf[k] = '\r'; break;
-          case 't' : buf[k] = '\t'; break;
-          case 'v' : buf[k] = '\v'; break;
-          case '\\': buf[k] = '\\'; break;
-          case '\'': buf[k] = '\''; break;
-          default  : buf[k] = '\\'; k++; buf[k] = string[j]; break;
-          } 
-        }  
-        else if (string[j] == '\'')
-        {
-          NSAssert(string[j+1] == '\'', @"");
-          buf[k] = string[j];
-          j++;
-        }
-        else
-          buf[k] = string[j];
-        
-        j++; k++;       
+        rs.type = SASSIGNMENT ;
+        string_index += 2; return;
       }
-      buf[k] = '\0';
-      
-      
-      rs.value = [NSMutableString stringWithUTF8String:buf];
-      free(buf);
-   
-      string_index++; 
+      else
+      {
+        rs.type = COLON;
+        string_index ++  ; return;
+      }
+  case '"':
+      [self scanString];
       return;
-    }
-    else
-    {
-      [self syntaxError:@"end of string (\') missing"];
-    }     
   } // end_switch
   
   if (symbol_operator_tab[(unsigned char)string[string_index]])
@@ -530,71 +634,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   }
   else if (isdigit(string[string_index]))
   {
-    NSInteger exponentLetterIndex = -1;
-    NSInteger hexadecimalRadixSpecifierIndex = -1;
-    firstDigitIndex = string_index;
-    string_index++;
-    while( string_index < string_size && (isdigit(string[string_index])) )
-      string_index++;
-    
-    if (string_index < string_size)
-    {
-      if (string[string_index] == 'r')
-      {    
-        if (string_index == firstDigitIndex+2 && string[firstDigitIndex] == '1' && string[firstDigitIndex+1] == '6')
-        {
-          hexadecimalRadixSpecifierIndex = firstDigitIndex;
-          string_index++;
-        
-          if (string_index == string_size || !isHexadecimalDigit(string[string_index]))
-            [self syntaxError:@"invalid number literal"];      
-        
-          while( string_index < string_size && (isHexadecimalDigit(string[string_index])) )
-            string_index++;
-        }
-      }
-      else
-      {
-        if (string[string_index] == '.' && isdigit(string[string_index+1]))
-        {
-          string_index++;
-          while( string_index < string_size && (isdigit(string[string_index])) )
-            string_index++;
-        }
-        
-        if (string_index < string_size && (string[string_index] == 'e'|| string[string_index] == 'd' || string[string_index] == 'q'))
-        {
-          exponentLetterIndex = string_index;
-          string_index++;
-          if (string_index == string_size || (!isdigit(string[string_index]) && string[string_index] != '+' && string[string_index] != '-'))
-            [self syntaxError:@"invalid number literal"];
-          if (string[string_index] == '+' || string[string_index] == '-')
-            string_index++;
-          if (string_index == string_size || !isdigit(string[string_index]))
-            [self syntaxError:@"invalid number literal"];      
-          while( string_index < string_size && (isdigit(string[string_index])) )
-            string_index++;
-        }
-      }  
-    }      
-    
-    rs.type = SNUMBER;
-    buf = malloc(string_index-firstDigitIndex+1);
-    memcpy(buf, &(string[firstDigitIndex]), string_index-firstDigitIndex);
-    buf[string_index-firstDigitIndex] = '\0';
-    
-    // Translate into a format understood by the strtod() C function used latter to get a double from the string representation of the number
-    if (hexadecimalRadixSpecifierIndex != -1)
-    {
-      buf[hexadecimalRadixSpecifierIndex - firstDigitIndex] = '0';
-      buf[1 + hexadecimalRadixSpecifierIndex - firstDigitIndex] = 'x'; 
-      buf[2 + hexadecimalRadixSpecifierIndex - firstDigitIndex] = '0'; 
-    }
-    
-    if (exponentLetterIndex != -1) buf[exponentLetterIndex - firstDigitIndex] = 'e'; 
-    
-    rs.value = [NSMutableString stringWithUTF8String:buf];
-    free(buf);
+    [self scanDigit];
   }        
   else
   {
@@ -702,7 +742,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   {
     [statements addObject:[self statementWithCompilationContext:compilationContext]];
     
-    if (rs.type == PERIOD) [self scan]; 
+    if (rs.type == PERIOD || rs.type == SEMICOLON) [self scan];
     else                   break;
   } 
   while (rs.type != CLOSE_BRACKET && rs.type != CLOSE_BRACE && rs.type != END);
@@ -790,7 +830,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   }
   else node = exp1_res.codeNode;
   
-  if (rs.type == SEMICOLON)
+  if (rs.type == COMMA && array_depth == 0)
   {
     if (node->nodeType != UNARY_MESSAGE && node->nodeType != BINARY_MESSAGE && node->nodeType != KEYWORD_MESSAGE) 
       [self syntaxError:@"no cascade expected here"];
@@ -802,6 +842,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
     do
     {
       NSArray *patternElement;
+      
       
       [self scan];
       patternElement = [self patternElt];
@@ -831,7 +872,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
       }
       [messages addObject:message];
       
-    } while (rs.type == SEMICOLON);
+    } while (rs.type == COMMA);
 
     FSCNCascade *cascadeNode = [[[FSCNCascade alloc] initWithReceiver:((FSCNMessage *)node)->receiver messages:messages] autorelease]; 
     [cascadeNode setFirstCharIndex:firstCharIndex lastCharIndex:message->lastCharIndex];
@@ -897,7 +938,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
 {
   struct codeNodePatternElementPair exp2_res = [self exp2WithCompilationContext:compilationContext];
   
-  if (rs.type == OPERATOR)
+  if (rs.type == OPERATOR || (rs.type == COLON && array_depth > 0))
     return [self exp1RemainingWithCompilationContext:compilationContext left:exp2_res.codeNode patternElement:exp2_res.patternElement];
   else
     return exp2_res;
@@ -912,11 +953,14 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   struct codeNodePatternElementPair exp2_res;
   long firstCharIndex, lastCharIndex;
   
-  [self checkToken:OPERATOR :@"operator expected"];
+  if (!(rs.type == COLON && array_depth > 0))
+    [self checkToken:OPERATOR :@"operator expected"];
+    
+    
   firstCharIndex = token_first_char_index;
   lastCharIndex = string_index;
   
-  selectorString = operator_name(rs.value);
+  selectorString = operator_name(rs);
   [selectorString insertString:@"operator" atIndex:0];
   [selectorString appendString:@":"];
   [self scan];
@@ -1066,9 +1110,25 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
       return nil; // W        
   
   case COMPACT_BLOCK:
-  case OPEN_BRACKET:
       return [self blockWithCompilationContext:compilationContext parentSymbolTable:compilationContext.symbolTable];
-        
+      
+  case OPEN_BRACKET: {
+      // Lexer always puts us one ahead.
+      char next_char = string_index < string_size ? string[string_index] : '?';
+//      NSLog(@"Next char %c\n", next_char);
+      if (next_char == ':')
+        return [self blockWithCompilationContext:compilationContext parentSymbolTable:compilationContext.symbolTable];
+      else if (next_char == '|') {
+        string_index++; // preserve existing token but have scan skip over the bar
+        return [self blockWithCompilationContext:compilationContext parentSymbolTable:compilationContext.symbolTable];
+      }
+      [self scan];
+      r = [self expWithCompilationContext:compilationContext];
+      [self checkToken:CLOSE_BRACKET :@"\"]\" expected"];
+      [self scan];
+      return r;
+    }
+
   case SSTRING:
       r = [[[FSCNPrecomputedObject alloc] initWithObject:[[rs.value copy] autorelease]] autorelease];
       [r setFirstCharIndex:token_first_char_index lastCharIndex:string_index];
@@ -1076,7 +1136,10 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
       return r;
       
   case OPEN_BRACE:
-      return [self arrayWithCompilationContext:compilationContext];
+      return [self arrayWithCompilationContext:compilationContext isPrefixed:NO];
+      
+  case ARRAY_BEGIN:
+      return [self arrayWithCompilationContext:compilationContext isPrefixed:YES];
       
   case DICTIONARY_BEGIN:
       return [self dictionaryWithCompilationContext:compilationContext];
@@ -1156,20 +1219,27 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   return r;
 }    
 
-- (FSCNArray *) arrayWithCompilationContext:(struct compilationContext)compilationContext
+- (FSCNArray *) arrayWithCompilationContext:(struct compilationContext)compilationContext isPrefixed:(BOOL)prefixed
 {
   NSMutableArray *elements = [NSMutableArray array];
   int32_t firstCharIndex = token_first_char_index;
   FSCNArray *r;
   
-  [self checkToken:OPEN_BRACE :@"\"{\" expected"];
+  if (!prefixed)
+    [self checkToken:OPEN_BRACE :@"\"{\" expected"];
+  else
+    [self checkToken:ARRAY_BEGIN :@"\"@[\" expected"];
+  
   [self scan];
   
-  if (rs.type == CLOSE_BRACE)
+  array_depth += 1;
+  
+  if ((!prefixed && rs.type == CLOSE_BRACE) || (prefixed && rs.type == CLOSE_BRACKET))
   {
     r = [[[FSCNArray alloc] initWithElements:elements] autorelease];
     [r setFirstCharIndex:firstCharIndex lastCharIndex:string_index];  
     [self scan];
+    array_depth -= 1;
     return r;
   }    
   else [elements addObject:[self expWithCompilationContext:compilationContext]];
@@ -1180,13 +1250,17 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
     [elements addObject:[self expWithCompilationContext:compilationContext]];
   }
   
-  [self checkToken:CLOSE_BRACE :@"\"}\" expected"];
+  if (!prefixed)
+    [self checkToken:CLOSE_BRACE :@"\"}\" expected"];
+  else
+    [self checkToken:CLOSE_BRACKET :@"\"]\" expected"];
   
   r = [[[FSCNArray alloc] initWithElements:elements] autorelease];
   [r setFirstCharIndex:firstCharIndex lastCharIndex:token_first_char_index];
 
   [self scan];
-    
+  
+  array_depth -= 1;
   return r;
 }      
 
@@ -1333,11 +1407,14 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   [self checkToken:DICTIONARY_BEGIN :@"\"#{\" expected"];
   [self scan];
   
+  array_depth += 1;
+  
   if (rs.type == CLOSE_BRACE)
   {
     r = [[[FSCNDictionary alloc] initWithEntries:entries] autorelease];
     [r setFirstCharIndex:firstCharIndex lastCharIndex:string_index];  
     [self scan];
+    array_depth -= 1;
     return r;
   }    
   else [entries addObject:[self expWithCompilationContext:compilationContext]];
@@ -1354,13 +1431,21 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   [r setFirstCharIndex:firstCharIndex lastCharIndex:token_first_char_index];
 
   [self scan];
-    
+  
+  array_depth -= 1;
   return r;
 }      
 
 - (id) patternElt
 {
   NSMutableArray *r;
+  
+  
+  if (rs.type == OPERATOR && [rs.value isEqualToString:@"\\"] ) {
+    if (string[string_index] != '@')
+      return NULL;
+    [self scan];
+  }
 
   if (rs.type != AT) return [NSNull null];
   
@@ -1445,7 +1530,7 @@ static NSString *FSOperatorFromObjCOperatorName(NSString *operatorName)  // ex: 
   //*************** Handle the method name and arguments **************** 
   if (rs.type == OPERATOR)
   {
-    selectorString = operator_name(rs.value);   
+    selectorString = operator_name(rs);
     [selectorString insertString:@"operator" atIndex:0];
     [selectorString appendString:@":"];
     argumentCount = 3;

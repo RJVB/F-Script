@@ -109,7 +109,7 @@ static BOOL useMaxSize;
   if (self = [super initWithFrame:frameRect])
   {
     prompt             = [thePrompt retain];
-    history            = [FSCommandHistory latestHistoryWithSize:theHistorySize];
+    history            = [FSCommandHistory newLatestHistoryWithSize:theHistorySize];
     parserMode         = NO_DECOMPOSE;
     commandHandler     = [theCommandHandler retain];
     lineEdited         = NO;

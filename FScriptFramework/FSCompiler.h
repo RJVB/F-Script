@@ -9,7 +9,7 @@
 
 enum e_token_type { KW_FALSE, KW_TRUE, KW_NIL, KW_SUPER, OPEN_BRACKET, CLOSE_BRACKET, NAME, END, SNUMBER, SDATE, OPEN_PARENTHESE
                   , CLOSE_PARENTHESE, COMMA, SEMICOLON, PERIOD, SSTRING, OPEN_BRACE, CLOSE_BRACE, OPERATOR, COLON
-                  , SASSIGNMENT, AT, COMPACT_BLOCK, PREDEFINED_OBJECT, CARET, DICTIONARY_BEGIN};
+                  , SASSIGNMENT, AT, COMPACT_BLOCK, PREDEFINED_OBJECT, CARET, DICTIONARY_BEGIN, ARRAY_BEGIN};
 
 struct res_scan
 {
@@ -29,6 +29,8 @@ struct res_scan
   NSString *errorStr;
   NSInteger errorFirstCharIndex;
   NSInteger errorLastCharIndex;
+  
+  int32_t array_depth;
 }  
 
 + (id)compiler;

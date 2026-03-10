@@ -137,15 +137,6 @@ static NSImage * sWindowImage = nil;
         return self;
 }
 
-- (void)viewDidLoad
-{
-        [super viewDidLoad];
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-        self.view.appearance = [NSAppearance appearanceNamed:AppearanceName];
-        self.viewPathControl.appearance = [NSAppearance appearanceNamed:AppearanceName];
-#endif
-}
-
 - (void)awakeFromNib
 {
         if (!self.hasAwoken) {
@@ -155,13 +146,6 @@ static NSImage * sWindowImage = nil;
                 _scrollViewOffsetY = NSHeight(scrollView.superview.bounds) - NSHeight(scrollView.frame);
                 self.outlineView.doubleAction = @selector(inspectAction:);
                 self.outlineView.target = self;
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-                self.outlineView.appearance = [NSAppearance appearanceNamed:AppearanceName];
-                if (self.rootViewModelItem.valueClass == NSView.class) {
-                        self.viewPathMenu = [self _menuForView:self.rootViewModelItem.value];
-                }
-                
-#endif
         }
 }
 
@@ -430,7 +414,6 @@ static NSImage * sWindowImage = nil;
 -(NSPathComponentCell*)_pathComponentCellForView:(NSView*)view withURL:(NSURL*)url
 {
         NSPathComponentCell *item = [[NSPathComponentCell alloc] initTextCell:[self _titleForView:view]];
-        item.controlSize = self.viewPathControl.controlSize;
         item.font = self.viewPathControl.font;
         item.image = [self _imageForView:view];
         item.representedObject = view;

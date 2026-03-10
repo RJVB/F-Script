@@ -43,7 +43,7 @@ static NSPoint topLeftPoint = {0,0}; // Used for cascading windows.
 {
   FSObjectBrowserView *bbv;
   
-  [super initWithContentRect:NSMakeRect(100,100,830,400) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask /*| NSTexturedBackgroundWindowMask*/ backing:NSBackingStoreBuffered defer:NO];
+  self = [super initWithContentRect:NSMakeRect(100,100,830,400) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask /*| NSTexturedBackgroundWindowMask*/ backing:NSBackingStoreBuffered defer:NO];
   
   [self setMinSize:NSMakeSize(130,130)]; // FSObjectBrowserView has weird behavior if the window becomes too tiny
     

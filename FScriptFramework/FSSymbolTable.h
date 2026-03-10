@@ -47,8 +47,8 @@ struct FSContextIndex
 struct FSContextValueWrapper
 {
   enum FSContext_symbol_status status;
-  id value;
-  NSString *symbol;
+  __unsafe_unretained id value;
+  __unsafe_unretained NSString *symbol;
 };
 
 @interface FSSymbolTable : NSObject <NSCopying , NSCoding>

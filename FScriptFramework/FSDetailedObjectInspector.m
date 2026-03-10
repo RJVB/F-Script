@@ -51,9 +51,7 @@ static void *TREE_OBSERVATION_CONTEXT = &TREE_OBSERVATION_CONTEXT;
                                                               backing:NSBackingStoreBuffered
                                                                 defer:NO];
                 panel.delegate = self;
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-                panel.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
-#endif
+
                 self.interpreter = interpreter;
                 self.window = panel;
                 

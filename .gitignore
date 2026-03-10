@@ -1,3 +1,6 @@
+*.bak
+*.rej
+*.orig
 # Xcode
 build/*
 *.pbxuser

@@ -249,7 +249,7 @@
   //return [[self class] stringWithFormat:@"\'%@\'", self]; 
   // The above instruction does not work, for an unknown reason (it raise an NSInvalidArgument exception)
   // So we use the folowing :
-  return [NSMutableString stringWithFormat:@"'%@'", self];  
+  return [NSMutableString stringWithFormat:@"\"%@\"", self];
 } 
 
 - (NSString *)reverse

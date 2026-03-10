@@ -43,7 +43,9 @@ static BOOL isEmpty(NSString *str)
 
 - (BOOL)acceptsFirstResponder {return YES;}
 
-- (BOOL)becomeFirstResponder {[[self window] performSelector:@selector(makeFirstResponder:) withObject:[[[[self cliView] subviews] objectAtIndex:0] documentView] afterDelay:0]; return YES;}
+- (BOOL)becomeFirstResponder {
+  [[self window] performSelector:@selector(makeFirstResponder:) withObject:[[[[self cliView] subviews] objectAtIndex:0] documentView] afterDelay:0]; return YES;
+}
 
 /////////////////
 
@@ -105,7 +107,6 @@ static BOOL isEmpty(NSString *str)
 
 - (void) dealloc
 {
-  //NSLog(@"FSInterpreterView dealloc");
   [interpreter release];
   [super dealloc];
 }
@@ -119,6 +120,7 @@ static BOOL isEmpty(NSString *str)
   
   //sub = [[[self subviews] objectAtIndex:0] retain];
   //[sub removeFromSuperview];
+  
 
   [super encodeWithCoder:coder];
 
@@ -137,7 +139,9 @@ static BOOL isEmpty(NSString *str)
 }
 
 - (CGFloat)fontSize
-{ return [[self cliView] fontSize]; }
+{
+  return [[self cliView] fontSize];
+}
 
 /*- (id) _init
 {

@@ -68,6 +68,45 @@ static NSMutableArray* customButtons = nil;
 /*==================================================================================================
  */
 
+@interface _NSBrowserScrollView : NSScrollView
+@end
+
+@interface MyScrollView: _NSBrowserScrollView
+@end
+
+
+
+@implementation MyScrollView
+
++ (void)changeKind:(_NSBrowserScrollView *)control
+{
+        object_setClass(control, [self class]);
+}
+- (void)scrollWheel:(NSEvent *)theEvent
+{
+        CGEventRef cgEvent = [theEvent CGEvent];
+
+        int count = CGEventGetIntegerValueField(cgEvent, 100 /*kCGScrollWheelEventScrollCount*/);
+        /* NSLog(@"%@ %d", theEvent, count); */
+
+        if (fabs([theEvent scrollingDeltaY]) != 0 || (fabs([theEvent scrollingDeltaX]) == 1 && count > 5)) {
+               [self.nextResponder scrollWheel:theEvent];
+        } else {
+                NSPoint currentPoint=[[self contentView] bounds].origin;
+                float mag = fabs([theEvent scrollingDeltaX]);
+                float delta = [theEvent scrollingDeltaX];
+                if (mag <= 1) delta *= 40;
+                else if (mag <= 2) delta *= 35;
+                else if (mag < 4) delta *= 10;
+                else if (mag < 6) delta *= 5;
+                currentPoint.x += -delta;
+                [[self documentView] scrollPoint:currentPoint];
+                
+        }
+        // Do nothing: disable scrolling altogether
+}
+@end
+
 
 @implementation FSObjectBrowserView
 
@@ -78,69 +117,69 @@ static NSMutableArray* customButtons = nil;
 
 + (void)initialize
 {
-        static BOOL tooLate = NO;
-        if (!tooLate) {
-                int i;
-                NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-                NSMutableDictionary* registrationDict = [NSMutableDictionary dictionary];
-
-                [registrationDict setObject:[NSNumber numberWithDouble:[[NSFont userFixedPitchFontOfSize:-1] pointSize]] forKey:@"FScriptFontSize"];
-                [defaults registerDefaults:registrationDict];
-
-                NSManagedObjectClass = NSClassFromString(@"NSManagedObject");
-
-                customButtons = [[NSMutableArray alloc] initWithCapacity:10];
-
-                for (i = 1; i < 11; i++) {
-                        FSObjectBrowserToolbarButton* button = [[FSObjectBrowserToolbarButton alloc] initWithFrame:NSMakeRect(0, 0, 80, 20)];
-                        NSString* buttonName = [defaults stringForKey:[NSString stringWithFormat:@"BigBrowserToolbarButtonCustom%dName", i]];
-                        NSData* blockData = [defaults objectForKey:[NSString stringWithFormat:@"BigBrowserToolbarButtonCustom%dBlock", i]];
-                        FSBlock* block = nil;
-
-                        if (blockData) {
-                                @try {
-                                        block = [[NSKeyedUnarchiver unarchiveObjectWithData:blockData] retain];
-                                }
-                                @catch (id exception)
-                                {
-                                        NSLog(@"Problem while loading a block for an F-Script object browser custom button: %@", FSErrorMessageFromException(exception));
-                                        block = nil; // We will fall back to the default block template
-                                }
-                        }
-
-                        if (!buttonName)
-                                buttonName = [NSString stringWithFormat:@"Custom%d", i];
-
-                        if (!block) {
-                                NSString* blockSource;
-
-                                if (i == 1) {
-                                        buttonName = @"Example1";
-                                        blockSource = @"[:selectedObject|\n\n\"This block is an example illustrating the use of custom buttons in the object browser. This block prompts the user to save the selected object, and then returns a custom string.\"\n\nselectedObject save.\n'hello, I''m the result of the Example1 block !'\n]";
-                                }
-                                else if (i == 2) {
-                                        buttonName = @"Example2";
-                                        blockSource = @"#isEqual:";
-                                }
-                                else if (i == 3) {
-                                        buttonName = @"Example3";
-                                        blockSource = @"[\n\"This block is an example illustrating the use of custom buttons in the object browser. This block will simply open a standard about box.\"\n\nNSApplication sharedApplication orderFrontStandardAboutPanel:nil\n]";
-                                }
-                                else
-                                        blockSource = @"[:selectedObject| selectedObject  \"Define your custom block here.\"]";
-
-                                block = [blockSource asBlock];
-                        }
-
-                        [button setIdentifier:[NSString stringWithFormat:@"Custom%d", i]];
-                        [button setName:buttonName];
-                        [button setBlock:block];
-                        [button setAction:@selector(applyBlockAction:)];
-                        [customButtons addObject:button];
-                }
-
-                [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveCustomButtonsSettings:) name:NSApplicationWillTerminateNotification object:nil];
-        }
+//        static BOOL tooLate = NO;
+//        if (!tooLate) {
+//                int i;
+//                NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+//                NSMutableDictionary* registrationDict = [NSMutableDictionary dictionary];
+//
+//                [registrationDict setObject:[NSNumber numberWithDouble:[[NSFont userFixedPitchFontOfSize:-1] pointSize]] forKey:@"FScriptFontSize"];
+//                [defaults registerDefaults:registrationDict];
+//
+//                NSManagedObjectClass = NSClassFromString(@"NSManagedObject");
+//
+//                customButtons = [[NSMutableArray alloc] initWithCapacity:10];
+//
+//                for (i = 1; i < 11; i++) {
+//                        FSObjectBrowserToolbarButton* button = [[FSObjectBrowserToolbarButton alloc] initWithFrame:NSMakeRect(0, 0, 80, 20)];
+//                        NSString* buttonName = [defaults stringForKey:[NSString stringWithFormat:@"BigBrowserToolbarButtonCustom%dName", i]];
+//                        NSData* blockData = [defaults objectForKey:[NSString stringWithFormat:@"BigBrowserToolbarButtonCustom%dBlock", i]];
+//                        FSBlock* block = nil;
+//
+//                        if (blockData) {
+//                                @try {
+//                                        block = [[NSKeyedUnarchiver unarchiveObjectWithData:blockData] retain];
+//                                }
+//                                @catch (id exception)
+//                                {
+//                                        NSLog(@"Problem while loading a block for an F-Script object browser custom button: %@", FSErrorMessageFromException(exception));
+//                                        block = nil; // We will fall back to the default block template
+//                                }
+//                        }
+//
+//                        if (!buttonName)
+//                                buttonName = [NSString stringWithFormat:@"Custom%d", i];
+//
+//                        if (!block) {
+//                                NSString* blockSource;
+//
+//                                if (i == 1) {
+//                                        buttonName = @"Example1";
+//                                        blockSource = @"[:selectedObject|\n\n\"This block is an example illustrating the use of custom buttons in the object browser. This block prompts the user to save the selected object, and then returns a custom string.\"\n\nselectedObject save.\n'hello, I''m the result of the Example1 block !'\n]";
+//                                }
+//                                else if (i == 2) {
+//                                        buttonName = @"Example2";
+//                                        blockSource = @"#isEqual:";
+//                                }
+//                                else if (i == 3) {
+//                                        buttonName = @"Example3";
+//                                        blockSource = @"[\n\"This block is an example illustrating the use of custom buttons in the object browser. This block will simply open a standard about box.\"\n\nNSApplication sharedApplication orderFrontStandardAboutPanel:nil\n]";
+//                                }
+//                                else
+//                                        blockSource = @"[:selectedObject| selectedObject  \"Define your custom block here.\"]";
+//
+//                                block = [blockSource asBlock];
+//                        }
+//
+//                        [button setIdentifier:[NSString stringWithFormat:@"Custom%d", i]];
+//                        [button setName:buttonName];
+//                        [button setBlock:block];
+//                        [button setAction:@selector(applyBlockAction:)];
+//                        [customButtons addObject:button];
+//                }
+//
+//                [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveCustomButtonsSettings:) name:NSApplicationWillTerminateNotification object:nil];
+//        }
 }
 
 + (void)saveCustomButtonsSettings
@@ -161,6 +200,7 @@ static NSMutableArray* customButtons = nil;
 }
 
 
+
 - (id)initWithFrame:(NSRect)frameRect
 {
         self = [super initWithFrame:frameRect];
@@ -172,6 +212,8 @@ static NSMutableArray* customButtons = nil;
                 fontSize = systemFontSize();
 
                 browser = [[NSBrowser alloc] initWithFrame:NSMakeRect(0, FSObjectBrowserBottomBarHeight, baseWidth, baseHeight - FSObjectBrowserBottomBarHeight)];
+                [MyScrollView changeKind: [browser _scrollViewForColumns]];
+                [[browser _scrollViewForColumns] setVerticalScrollElasticity: NSScrollElasticityAllowed];
                 [browser setMatrixClass:FSObjectBrowserMatrix.class];
           
                 [browser setCellClass:[FSObjectBrowserCell class]];
@@ -1305,7 +1347,7 @@ static NSMutableArray* customButtons = nil;
 - (void)selectView:(id)dummy
 {
         NSEvent* event;
-        id view;
+        id view = nil;
         NSCursor* cursor = [NSCursor crosshairCursor];
         NSDate* distantFuture = [NSDate distantFuture];
 
@@ -1402,7 +1444,7 @@ static NSMutableArray* customButtons = nil;
 
         if (!([event type] == NSKeyDown && [[event characters] characterAtIndex:0] == ESCAPE)) {
                 // If Alt is held down, select the exact view shown in the floating window
-                if ((event.modifierFlags & NSAlternateKeyMask) && view != nil) {
+                if ((event.modifierFlags & NSAlternateKeyMask) && (view != nil)) {
                         selectedView = view;
                 }
                 if (selectedView == nil)
