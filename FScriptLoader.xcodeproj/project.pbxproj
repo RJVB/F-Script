@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		D6AB3EA52F6F4FA700A9C454 /* FScript.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = D6AB3EA32F6F4F9F00A9C454 /* FScript.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FB843E9D2027E31E00280CCE /* FScriptLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = FB843E9C2027E31E00280CCE /* FScriptLoader.m */; settings = {COMPILER_FLAGS = "-fobjc-arc-exceptions -fobjc-arc -fobjc-weak"; }; };
-		FB843EA12027E31E00280CCE /* ZKSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = FB843EA02027E31E00280CCE /* ZKSwizzle.m */; };
 		FB843EA32027E31E00280CCE /* PrefixHeader.pch in Resources */ = {isa = PBXBuildFile; fileRef = FB843EA22027E31E00280CCE /* PrefixHeader.pch */; };
 /* End PBXBuildFile section */
 
@@ -32,8 +31,6 @@
 		FB843E902027E31E00280CCE /* FScriptLoader.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FScriptLoader.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB843E992027E31E00280CCE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FB843E9C2027E31E00280CCE /* FScriptLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FScriptLoader.m; sourceTree = "<group>"; };
-		FB843E9F2027E31E00280CCE /* ZKSwizzle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ZKSwizzle.h; path = ZKSwizzle/ZKSwizzle.h; sourceTree = "<group>"; };
-		FB843EA02027E31E00280CCE /* ZKSwizzle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ZKSwizzle.m; path = ZKSwizzle/ZKSwizzle.m; sourceTree = "<group>"; };
 		FB843EA22027E31E00280CCE /* PrefixHeader.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PrefixHeader.pch; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -78,7 +75,6 @@
 			children = (
 				D6AB3EA62F6F50F700A9C454 /* README.md */,
 				FB843E9C2027E31E00280CCE /* FScriptLoader.m */,
-				FB843E9E2027E31E00280CCE /* ZKSwizzle */,
 				FB843E982027E31E00280CCE /* Supporting Files */,
 			);
 			path = FScriptLoader;
@@ -91,15 +87,6 @@
 				FB843EA22027E31E00280CCE /* PrefixHeader.pch */,
 			);
 			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		FB843E9E2027E31E00280CCE /* ZKSwizzle */ = {
-			isa = PBXGroup;
-			children = (
-				FB843E9F2027E31E00280CCE /* ZKSwizzle.h */,
-				FB843EA02027E31E00280CCE /* ZKSwizzle.m */,
-			);
-			name = ZKSwizzle;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -172,7 +159,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FB843E9D2027E31E00280CCE /* FScriptLoader.m in Sources */,
-				FB843EA12027E31E00280CCE /* ZKSwizzle.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

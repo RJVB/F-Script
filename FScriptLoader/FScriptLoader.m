@@ -24,6 +24,7 @@
     IBOutlet NSButton *automaticallyIntrospectDeclaredPropertiesUI;
 }
 
++ (void)insertInMainMenu;
 - (FSInterpreterView *)interpreterView;
 - (IBAction)openObjectBrowser:(id)sender;
 - (IBAction)showMenuConsole:(id)sender;
@@ -59,6 +60,7 @@ static FScriptLoader* plugin = nil;
     NSLog(@"fscriptloader : %@", NSBundle.mainBundle.bundleIdentifier);
     NSArray *blackList = [[NSArray alloc] initWithObjects:@"com.apple.dock", @"com.apple.loginwindow", nil];
     NSUInteger osx_ver = [[NSProcessInfo processInfo] operatingSystemVersion].minorVersion;
+    NSString *osx_name = (osx_ver <= 10) ? @"OS X" : @"macOS";
     if (![blackList containsObject:NSBundle.mainBundle.bundleIdentifier]) {
         // Load F-Script
         NSString *FScript = [NSString stringWithFormat:@"%@/Contents/Frameworks/FScript.framework", [[NSBundle bundleWithIdentifier:@"org.w0lf.FScriptLoader"] bundlePath]];
@@ -71,13 +73,13 @@ static FScriptLoader* plugin = nil;
                 plugin = [FScriptLoader sharedInstance];
 
                 // Log
-                NSLog(@"%@ loaded into %@ on macOS 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], (long)osx_ver);
+                NSLog(@"%@ loaded into %@ on %@ 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], osx_name, (long)osx_ver);
             });
         } else {
-            NSLog(@"%@ failed to load into %@ on macOS 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], (long)osx_ver);
+            NSLog(@"%@ failed to load into %@ on %@ 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], osx_name, (long)osx_ver);
         }
     } else {
-        NSLog(@"%@ aborted loading into %@ on macOS 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], (long)osx_ver);
+        NSLog(@"%@ aborted loading into %@ on %@ 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], osx_name, (long)osx_ver);
     }
 }
 
@@ -92,9 +94,15 @@ static FScriptLoader* plugin = nil;
     [NSEvent addGlobalMonitorForEventsMatchingMask:NSKeyDownMask
                                            handler:^(NSEvent *event){
                                                if ([event modifierFlags] == 1704234 && [event keyCode] == 8) {
+                                                   if (![self->menuItem menu]) {
+                                                       [self->menuItem performSelector:@selector(insertInMainMenu)];
+                                                   }
                                                    /*CMD, ALT, SHIFT + C*/
                                                    [self->menuItem performSelector:@selector(showMenuConsole:) withObject:nil];
                                                } else if ([event modifierFlags] == 1704234 && [event keyCode] == 31) {
+                                                   if (![self->menuItem menu]) {
+                                                       [self->menuItem performSelector:@selector(insertInMainMenu)];
+                                                   }
                                                    /*CMD, ALT, SHIFT + O*/
                                                    [self->menuItem performSelector:@selector(openObjectBrowser:) withObject:nil];
                                                }
@@ -103,10 +111,16 @@ static FScriptLoader* plugin = nil;
     NSEvent * (^monitorHandler)(NSEvent *);
     monitorHandler = ^NSEvent * (NSEvent * event){
         if ([event modifierFlags] == 1704234 && [event keyCode] == 8) {
+            if (![self->menuItem menu]) {
+                [self->menuItem performSelector:@selector(insertInMainMenu)];
+            }
             /*CMD, ALT, SHIFT + C*/
             [self->menuItem performSelector:@selector(showMenuConsole:) withObject:nil];
             return nil;
         } else if ([event modifierFlags] == 1704234 && [event keyCode] == 31) {
+            if (![self->menuItem menu]) {
+                [self->menuItem performSelector:@selector(insertInMainMenu)];
+            }
             /*CMD, ALT, SHIFT + O*/
             [self->menuItem performSelector:@selector(openObjectBrowser:) withObject:nil];
             return nil;
